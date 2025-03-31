@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <title>Compilazione Modello AA9/12</title>
+  <!-- Includo pdf-lib dal CDN -->
+  <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .form-group { margin-bottom: 15px; }
+    label { display: block; margin-bottom: 5px; }
+    input[type="text"] { width: 100%; padding: 5px; }
+    input[type="checkbox"] { margin-right: 5px; }
+    button { padding: 10px 15px; }
+  </style>
+</head>
+<body>
+  <h1>Compilazione Modello AA9/12</h1>
+  <form id="pdfForm">
+    <div class="form-group">
+      <label for="nome">Ditta / Cognome e Nome:</label>
+      <input type="text" id="nome" name="nome" placeholder="Inserisci nome/ditta">
+    </div>
+    <div class="form-group">
+      <label for="volume">Volume d'Affari Presunto:</label>
+      <input type="text" id="volume" name="volume" placeholder="Inserisci il volume">
+    </div>
+    <div class="form-group">
+      <label>Tipo di dichiarazione:</label>
+      <input type="checkbox" id="tipo1" name="tipo1" value="1">
+      <label for="tipo1" style="display:inline;">Opzione 1</label>
+      <input type="checkbox" id="tipo2" name="tipo2" value="2">
+      <label for="tipo2" style="display:inline;">Opzione 2</label>
+    </div>
+    <!-- Aggiungi altri campi secondo necessità -->
+    <button type="button" onclick="fillPdf()">Scarica PDF compilato</button>
+  </form>
+
+  <script>
+    async function fillPdf() {
+      // Assicurati che il file AA9-12_editabile.pdf sia nella stessa cartella di index.html
+      const url = 'AA9-12_editabile.pdf';
+      const existingPdfBytes = await fetch(url).then(res => res.arrayBuffer());
+      
+      // Carica il PDF esistente
+      const pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
+      const form = pdfDoc.getForm();
+
+      // Popola i campi del PDF con i dati del form.
+      // I nomi dei campi devono corrispondere a quelli presenti nel PDF.
+      try {
+        const nomeField = form.getTextField('nome');
+        nomeField.setText(document.getElementById('nome').value);
+      } catch(e) {
+        console.error("Campo 'nome' non trovato nel PDF.", e);
+      }
+      
+      try {
+        const volumeField = form.getTextField('volume');
+        volumeField.setText(document.getElementById('volume').value);
+      } catch(e) {
+        console.error("Campo 'volume' non trovato nel PDF.", e);
+      }
+      
+      // Gestione delle checkbox
+      try {
+        const tipo1Field = form.getCheckBox('tipo1');
+        if (document.getElementById('tipo1').checked) {
+          tipo1Field.check();
+        } else {
+          tipo1Field.uncheck();
+        }
+      } catch(e) {
+        console.error("Campo checkbox 'tipo1' non trovato nel PDF.", e);
+      }
+      
+      try {
+        const tipo2Field = form.getCheckBox('tipo2');
+        if (document.getElementById('tipo2').checked) {
+          tipo2Field.check();
+        } else {
+          tipo2Field.uncheck();
+        }
+      } catch(e) {
+        console.error("Campo checkbox 'tipo2' non trovato nel PDF.", e);
+      }
+      
+      // Appiattisci il form per rendere permanenti le modifiche
+      form.flatten();
+
+      // Salva il PDF compilato
+      const pdfBytes = await pdfDoc.save();
+
+      // Crea un blob e genera il download del PDF
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = 'AA9-12_compilato.pdf';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    }
+  </script>
+</body>
+</html>
